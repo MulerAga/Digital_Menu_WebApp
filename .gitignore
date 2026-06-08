@@ -1,0 +1,14 @@
+node_modules/
+.env
+.env.*
+backend/uploads/receipts/*
+!backend/uploads/receipts/.gitkeep
+*.log
+.DS_Store
+frontend/build/
+dist/
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+uploads/

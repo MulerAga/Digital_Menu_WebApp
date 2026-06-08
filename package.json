@@ -1,0 +1,16 @@
+{
+  "name": "restaurant-system",
+  "version": "1.0.0",
+  "description": "```sql\r CREATE DATABASE restaurant_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;\r ```",
+  "main": "index.js",
+  "scripts": {
+    "dev": "concurrently \"npm run dev --prefix backend\" \"npm run dev --prefix frontend\""
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "concurrently": "^9.2.1",
+    "lucide-react": "^1.17.0"
+  }
+}
