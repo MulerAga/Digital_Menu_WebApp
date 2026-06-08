@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
 import { useBasePath, useSlug } from "../context/SlugContext";
@@ -54,9 +54,19 @@ export default function CartPage() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
+
   const pathParts = location.pathname.split("/").filter(Boolean);
   const restaurantSlug = pathParts[0];
   const branchSlug = pathParts[2] || null;
+
+  // Pre-fill table number from QR code URL (?table=5)
+  useEffect(() => {
+    const tableFromUrl = searchParams.get("table");
+    if (tableFromUrl && !tableNumber) {
+      setTable(tableFromUrl);
+    }
+  }, [setTable]); // ← fixed: added setTable to dependency array
 
   useEffect(() => {
     return () => {
@@ -149,7 +159,6 @@ export default function CartPage() {
             : item.price;
           return (
             <div key={item.id} className="flex items-center gap-4 p-4">
-              {/* ✅ UPDATED: Show item image, fallback to category_icon or fork emoji */}
               <div className="w-12 h-12 rounded-xl bg-orange-50 dark:bg-gray-800 flex items-center justify-center text-2xl flex-shrink-0 overflow-hidden">
                 {item.image ? (
                   <img
@@ -163,7 +172,6 @@ export default function CartPage() {
                   "🍴"
                 )}
               </div>
-
               <div className="flex-1 min-w-0">
                 <p className="font-medium text-sm truncate">{item.name}</p>
                 <p className="text-primary-600 font-semibold text-sm">
@@ -212,6 +220,11 @@ export default function CartPage() {
             onChange={(e) => setTable(e.target.value)}
             required
           />
+          {searchParams.get("table") && (
+            <p className="text-xs text-green-600 mt-1">
+              ✓ Table {searchParams.get("table")} detected from QR code
+            </p>
+          )}
         </div>
         <div>
           <label className="block text-sm font-medium mb-1.5">
