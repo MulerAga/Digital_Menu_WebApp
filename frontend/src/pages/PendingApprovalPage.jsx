@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useEffect } from "react";
 import { useBasePath } from "../context/SlugContext";
@@ -7,6 +7,8 @@ export default function PendingApprovalPage() {
   const { logout, user } = useAuth();
   const navigate = useNavigate();
   const base = useBasePath();
+  const { slug } = useParams();
+   const backTo = slug ? `/${slug}` : "/";
 
   useEffect(() => {
     // If somehow an approved user reaches this page, redirect
@@ -17,8 +19,9 @@ export default function PendingApprovalPage() {
 
   const handleLogout = () => {
     logout();
-    navigate(`${base || ""}/login`);
+    navigate(`${backTo}`);
   };
+  
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
@@ -28,7 +31,7 @@ export default function PendingApprovalPage() {
             <span className="text-3xl">⏳</span>
           </div>
           <h1 className="font-bold text-gray-900 dark:text-white mb-2">
-             Registration Successful!
+            Registration Successful!
           </h1>
           <h1 className="font-bold text-gray-900 dark:text-white mb-2">
             Waiting for Approval

@@ -57,7 +57,7 @@ export default function MenuItemCard({ item }) {
             <span
               className="bg-black/70 text-white text-sm font-semibold px-3 py-1.5 rounded-full text-center max-w-[80%] animate-cart-pop"
             >
-              🛒 {item.name}
+              🛒 {item.name} <span className='text-slate-500'>is added</span>
             </span>
           </div>
         )}

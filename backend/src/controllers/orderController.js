@@ -124,33 +124,30 @@ exports.placeOrder = async (req, res) => {
     const fullOrder = { ...order[0], items: orderItems };
 
     const io = req.app.get("io");
-    if (io && ownerId && restaurantSlug) {
-      io.to(`admin_restaurant_${restaurantSlug}`).emit("new_order", fullOrder);
-      io.to(`manager_restaurant_${restaurantSlug}`).emit(
-        "new_order",
-        fullOrder,
-      );
-      io.to(`staff_restaurant_${restaurantSlug}`).emit("new_order", fullOrder);
-      io.to(`cashier_restaurant_${restaurantSlug}`).emit(
-        "new_order",
-        fullOrder,
-      );
 
+    if (io && ownerId && restaurantSlug) {
+      // 1. Branch-specific new order
+      if (branchId) {
+        io.to(`branch_${branchId}`).emit("new_order", fullOrder);
+      }
+
+      // 2. Restaurant admin receives all orders
+      io.to(`admin_restaurant_${restaurantSlug}`).emit("new_order", fullOrder);
+
+      // 3. Cash orders
       if ((payment_method || "cash") === "cash") {
-        io.to(`cashier_restaurant_${restaurantSlug}`).emit(
-          "new_cash_order",
-          fullOrder,
-        );
-        io.to(`staff_restaurant_${restaurantSlug}`).emit(
-          "new_cash_order",
-          fullOrder,
-        );
+        if (branchId) {
+          io.to(`branch_${branchId}`).emit("new_cash_order", fullOrder);
+        }
+
+        // Admin receives all cash orders
         io.to(`admin_restaurant_${restaurantSlug}`).emit(
           "new_cash_order",
           fullOrder,
         );
       }
 
+      // 4. Customer receives confirmation
       if (customerUserId) {
         io.to(`user_${customerUserId}`).emit("order_placed", fullOrder);
       }
@@ -544,7 +541,6 @@ exports.getCashierSummary = async (req, res) => {
   }
 };
 
-
 exports.getOrderByGuestToken = async (req, res) => {
   try {
     const { token } = req.params;
@@ -568,7 +564,6 @@ exports.getOrderByGuestToken = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
-
 
 exports.getOrderedItems = async (req, res) => {
   try {

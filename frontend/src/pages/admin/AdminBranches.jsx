@@ -341,7 +341,7 @@ export default function AdminBranches() {
           <div className="card p-6 w-full max-w-lg shadow-2xl animate-bounce-in max-h-[80vh] flex flex-col">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-bold text-lg">
-                Staff — {selectedBranch.branch_name}
+                Staff of &rarr; {selectedBranch.branch_name}
               </h3>
               <button
                 onClick={() => setSelectedBranch(null)}
@@ -392,33 +392,38 @@ export default function AdminBranches() {
                   )}
                 </div>
 
-                {allStaff.length > 0 && (
-                  <div>
-                    <p className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-2">
-                      Move to this branch
-                    </p>
-                    <div className="space-y-2">
-                      {allStaff.map((u) => (
-                        <div
-                          key={u.id}
-                          className="flex items-center justify-between bg-gray-50 dark:bg-gray-800 rounded-lg px-3 py-2"
-                        >
-                          <div>
-                            <p className="text-sm font-medium">{u.name}</p>
-                            <p className="text-xs text-gray-400">{u.role}</p>
-                          </div>
-                          <button
-                            disabled={assigningId === u.id}
-                            onClick={() => handleAssign(u.id)}
-                            className="btn-primary text-xs py-1 px-3 disabled:opacity-60"
-                          >
-                            {assigningId === u.id ? "Assigning..." : "Assign"}
-                          </button>
-                        </div>
-                      ))}
+                {allStaff.map((u) => (
+                  <div
+                    key={u.id}
+                    className="flex items-center justify-between bg-gray-50 dark:bg-gray-800 rounded-lg px-3 py-2"
+                  >
+                    <div>
+                      <p className="text-sm font-medium">{u.name}</p>
+
+                      <p className="text-xs text-gray-400 capitalize">
+                        {u.role}
+                      </p>
+
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        {u.branch_name
+                          ? `Assigned to ${u.branch_name}`
+                          : "Not assigned to a branch"}
+                      </p>
                     </div>
+
+                    <button
+                      disabled={assigningId === u.id}
+                      onClick={() => handleAssign(u.id)}
+                      className="btn-primary text-xs py-1 px-3 disabled:opacity-60"
+                    >
+                      {assigningId === u.id
+                        ? "Moving..."
+                        : u.branch_name
+                          ? "Move here"
+                          : "Assign"}
+                    </button>
                   </div>
-                )}
+                ))}
               </div>
             )}
           </div>

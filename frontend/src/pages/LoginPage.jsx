@@ -149,7 +149,7 @@ export default function LoginPage() {
               <div className="text-6xl mb-3 animate-float inline-block">🍽️</div>
             )}
             <h1 className="text-3xl font-bold">
-              {restaurantName || "RestaurantOS"}
+              {restaurantName || "RestaurantHub"}
             </h1>
           </div>
           <p className="text-gray-500 dark:text-gray-400 mt-1">

@@ -73,7 +73,7 @@ export default function StaffRegistrationPage() {
         setSuccess(true);
         setTimeout(() => {
           navigate(slug ? `/${slug}/pending-approval` : "/pending-approval");
-        }, 2000);
+        }, 10);
       } else {
         setError(result?.message || "Registration failed");
       }
@@ -96,7 +96,7 @@ export default function StaffRegistrationPage() {
               to={backTo}
               className="text-sm text-black hover:text-primary-100 transition-colors bg-red-500/50 p-2 rounded-lg"
             >
-              ← Back to Home
+              ← Go Back to Home
             </Link>
           </div>
         </div>

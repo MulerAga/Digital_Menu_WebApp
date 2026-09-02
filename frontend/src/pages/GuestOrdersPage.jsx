@@ -63,7 +63,7 @@ export default function GuestOrdersPage() {
   return (
     <div className="max-w-lg mx-auto animate-fade-in space-y-4">
       <h1 className="text-2xl font-bold">My Orders 📋</h1>
-      <p className="text-[#F97316] dark:text-red-600 text-sm">
+      <p className="text-[#F97316] dark:text-red-200 text-sm">
         You can put your feedback after our service is served!
       </p>
       {orders.map((order) => (

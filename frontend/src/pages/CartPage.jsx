@@ -92,8 +92,8 @@ export default function CartPage() {
       formData.append(
         "items",
         JSON.stringify(
-          items.map((i) => ({ menu_item_id: i.id, quantity: i.qty }))
-        )
+          items.map((i) => ({ menu_item_id: i.id, quantity: i.qty })),
+        ),
       );
       formData.append("table_number", tableNumber);
       formData.append("payment_method", payment);
@@ -110,7 +110,7 @@ export default function CartPage() {
         navigate(`${base}/orders/${res.data.id}`);
       } else {
         const guestOrders = JSON.parse(
-          localStorage.getItem("guest_orders") || "[]"
+          localStorage.getItem("guest_orders") || "[]",
         );
         guestOrders.unshift({
           id: res.data.id,
@@ -212,14 +212,22 @@ export default function CartPage() {
           <label className="block text-sm font-medium mb-1.5">
             Table Number <span className="text-red-500">*</span>
           </label>
-          <input
-            type="text"
-            className="input"
-            placeholder="e.g. Table 5"
-            value={tableNumber}
-            onChange={(e) => setTable(e.target.value)}
-            required
-          />
+
+          {searchParams.get("table") ? (
+            <div className="input bg-gray-100 dark:bg-gray-800">
+              Table {tableNumber}
+            </div>
+          ) : (
+            <input
+              type="text"
+              className="input"
+              placeholder="e.g. Table 5"
+              value={tableNumber}
+              onChange={(e) => setTable(e.target.value)}
+              required
+            />
+          )}
+
           {searchParams.get("table") && (
             <p className="text-xs text-green-600 mt-1">
               ✓ Table {searchParams.get("table")} detected from QR code

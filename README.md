@@ -1,4 +1,4 @@
-# RestaurantOS — Digital Menu & Ordering System
+# RestaurantHub — Digital Menu & Ordering System
 
 ## Quick Start
 

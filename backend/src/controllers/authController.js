@@ -11,7 +11,8 @@ const signToken = (user) =>
       approvalStatus: user.approval_status,
       slug: user.slug || null,
       business_slug: user.business_slug || null,
-      restaurant_slug: user.restaurant_slug || user.slug || user.business_slug || null,
+      restaurant_slug:
+        user.restaurant_slug || user.slug || user.business_slug || null,
       restaurant_id: user.restaurant_id || null,
       branch_id: user.branch_id || null,
       branch_slug: user.branch_slug || null,
@@ -288,15 +289,49 @@ const isSameBusinessUser = async (req, userId) => {
 exports.getUsers = async (req, res) => {
   try {
     const businessScope = getBusinessScope(req);
+
     const query = businessScope
-      ? "SELECT id, name, email, phone, role, is_active, created_at FROM users WHERE (business_slug = ? OR slug = ? OR id = ?) ORDER BY created_at DESC"
-      : "SELECT id, name, email, phone, role, is_active, created_at FROM users ORDER BY created_at DESC";
+      ? `SELECT
+          u.id,
+          u.name,
+          u.email,
+          u.phone,
+          u.role,
+          u.is_active,
+          u.branch_id,
+          b.branch_name,
+          b.branch_slug,
+          b.is_main_branch,
+          u.created_at
+         FROM users u
+         LEFT JOIN branches b ON b.id = u.branch_id
+         WHERE (u.business_slug = ? OR u.slug = ? OR u.id = ?)
+         ORDER BY u.created_at DESC`
+      : `SELECT
+          u.id,
+          u.name,
+          u.email,
+          u.phone,
+          u.role,
+          u.is_active,
+          u.branch_id,
+          b.branch_name,
+          b.branch_slug,
+          b.is_main_branch,
+          u.created_at
+         FROM users u
+         LEFT JOIN branches b ON b.id = u.branch_id
+         ORDER BY u.created_at DESC`;
+
     const params = businessScope
       ? [businessScope, businessScope, req.user.id]
       : [];
+
     const [rows] = await pool.query(query, params);
+
     res.json(rows);
   } catch (err) {
+    console.error("getUsers error:", err);
     res.status(500).json({ message: err.message });
   }
 };
@@ -411,7 +446,7 @@ exports.registerStaff = async (req, res) => {
     if (slug) {
       const [restRows] = await pool.query(
         "SELECT id, slug FROM restaurants WHERE slug = ? LIMIT 1",
-        [slug.toLowerCase().trim()]
+        [slug.toLowerCase().trim()],
       );
       if (restRows.length) {
         restaurantId = restRows[0].id;
@@ -425,7 +460,7 @@ exports.registerStaff = async (req, res) => {
       // Check restaurants table first
       const [restRows] = await pool.query(
         "SELECT id, slug FROM restaurants WHERE LOWER(restaurant_name) = ? LIMIT 1",
-        [searchName]
+        [searchName],
       );
       if (restRows.length) {
         restaurantId = restRows[0].id;
@@ -447,7 +482,7 @@ exports.registerStaff = async (req, res) => {
         // Retrieve restaurant_id if possible
         const [rRows] = await pool.query(
           "SELECT id FROM restaurants WHERE admin_id = ? LIMIT 1",
-          [business[0].id]
+          [business[0].id],
         );
         if (rRows.length) {
           restaurantId = rRows[0].id;
@@ -529,7 +564,7 @@ exports.loginWithApprovalCheck = async (req, res) => {
     if (user.role === "admin") {
       const [restRows] = await pool.query(
         "SELECT id, slug FROM restaurants WHERE admin_id = ? LIMIT 1",
-        [user.id]
+        [user.id],
       );
       if (restRows.length) {
         restaurantId = restRows[0].id;
@@ -538,7 +573,7 @@ exports.loginWithApprovalCheck = async (req, res) => {
     } else if (restaurantId) {
       const [restRows] = await pool.query(
         "SELECT slug FROM restaurants WHERE id = ? LIMIT 1",
-        [restaurantId]
+        [restaurantId],
       );
       if (restRows.length) {
         userRestaurantSlug = restRows[0].slug;
@@ -551,7 +586,10 @@ exports.loginWithApprovalCheck = async (req, res) => {
     }
 
     if (requestSlug) {
-      if (!userRestaurantSlug || requestSlug.toLowerCase() !== userRestaurantSlug.toLowerCase()) {
+      if (
+        !userRestaurantSlug ||
+        requestSlug.toLowerCase() !== userRestaurantSlug.toLowerCase()
+      ) {
         return res.status(403).json({
           message: "You do not belong to this restaurant.",
         });

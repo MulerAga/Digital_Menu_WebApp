@@ -3,6 +3,7 @@ import { authAPI, approvalsAPI } from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
 import toast from "react-hot-toast";
 
+
 const ROLE_STYLES = {
   admin:
     "bg-red-50 text-red-700 border border-red-200 dark:bg-red-950/40 dark:text-red-300 dark:border-red-900/50",
@@ -16,6 +17,7 @@ const ROLE_STYLES = {
     "bg-gray-50 text-gray-700 border border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700",
 };
 
+
 export default function AdminUsers() {
   const [users, setUsers] = useState([]);
   const [pendingUsers, setPendingUsers] = useState([]);
@@ -25,8 +27,11 @@ export default function AdminUsers() {
   const [rejectingUserId, setRejectingUserId] = useState(null);
   const [rejectionReason, setRejectionReason] = useState("");
   const [submittingAction, setSubmittingAction] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+
 
   const { user: me, isAdmin } = useAuth();
+
 
   const fetchUsers = async () => {
     try {
@@ -48,6 +53,7 @@ export default function AdminUsers() {
     }
   };
 
+
   const fetchPending = async () => {
     if (!isAdmin) return;
     try {
@@ -61,6 +67,7 @@ export default function AdminUsers() {
     }
   };
 
+
   useEffect(() => {
     fetchUsers();
     if (isAdmin) {
@@ -69,6 +76,19 @@ export default function AdminUsers() {
       setActiveTab("directory"); // Enforce managers only see directory
     }
   }, [isAdmin]);
+
+
+  // Filter users based on search query (name, email, or phone)
+  const filteredUsers = users.filter((u) => {
+    if (!searchQuery.trim()) return true;
+    const query = searchQuery.toLowerCase().trim();
+    return (
+      u.name?.toLowerCase().includes(query) ||
+      u.email?.toLowerCase().includes(query) ||
+      u.phone?.toLowerCase().includes(query)
+    );
+  });
+
 
   const handleRoleChange = async (id, role) => {
     try {
@@ -80,6 +100,7 @@ export default function AdminUsers() {
     }
   };
 
+
   const handleToggleActive = async (id, currentState) => {
     try {
       await authAPI.toggleActive(id);
@@ -89,6 +110,7 @@ export default function AdminUsers() {
       toast.error("Failed to update staff status");
     }
   };
+
 
   const handleDelete = async (id) => {
     if (!confirm("Are you sure you want to remove this staff member?")) return;
@@ -100,6 +122,7 @@ export default function AdminUsers() {
       toast.error("Failed to remove staff member");
     }
   };
+
 
   const handleApprove = async (userId) => {
     try {
@@ -114,6 +137,7 @@ export default function AdminUsers() {
       setSubmittingAction(false);
     }
   };
+
 
   const handleRejectSubmit = async (e) => {
     e.preventDefault();
@@ -132,6 +156,7 @@ export default function AdminUsers() {
     }
   };
 
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -146,6 +171,7 @@ export default function AdminUsers() {
           </p>
         </div>
 
+
         {/* Tab Switcher */}
         {isAdmin && (
           <div className="flex bg-gray-100 dark:bg-gray-800 p-1 rounded-xl w-fit border border-gray-200/50 dark:border-gray-700/50">
@@ -157,7 +183,7 @@ export default function AdminUsers() {
                   : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
               }`}
             >
-              Directory ({users.length})
+              Approved ({filteredUsers.length})
             </button>
             <button
               onClick={() => setActiveTab("pending")}
@@ -177,6 +203,34 @@ export default function AdminUsers() {
           </div>
         )}
       </div>
+
+
+      {/* Search Input (Admin only, Directory tab only) */}
+      {isAdmin && activeTab === "directory" && (
+        <div className="relative">
+          <input
+            type="text"
+            placeholder="Search by name, email, or phone..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="input w-full pl-10 pr-4 py-2 text-sm border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950"
+          />
+          <svg
+            className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+            />
+          </svg>
+        </div>
+      )}
+
 
       {activeTab === "directory" ? (
         /* TAB 1: STAFF DIRECTORY */
@@ -206,25 +260,30 @@ export default function AdminUsers() {
                       </td>
                     </tr>
                   ))
-                ) : users.length === 0 ? (
+                ) : filteredUsers.length === 0 ? (
                   <tr>
                     <td
                       colSpan={5}
                       className="px-5 py-12 text-center text-gray-500"
                     >
                       <p className="text-lg font-medium">
-                        No staff members found.
+                        {searchQuery.trim()
+                          ? "No staff members match your search."
+                          : "No staff members found."}
                       </p>
                       <p className="text-sm text-gray-400 mt-1">
-                        Register staff members to see them in the directory.
+                        {searchQuery.trim()
+                          ? "Try a different name, email, or phone number."
+                          : "Register staff members to see them in the directory."}
                       </p>
                     </td>
                   </tr>
                 ) : (
-                  users.map((u) => {
+                  filteredUsers.map((u) => {
                     const isCurrentUserAdmin = u.role === "admin";
                     const isSelf = u.id === me?.id;
                     const canEdit = !isSelf && (!isCurrentUserAdmin || isAdmin);
+
 
                     return (
                       <tr
@@ -258,6 +317,7 @@ export default function AdminUsers() {
                           </div>
                         </td>
 
+
                         {/* Role Badge */}
                         <td className="px-5 py-4">
                           <span
@@ -266,6 +326,7 @@ export default function AdminUsers() {
                             {u.role}
                           </span>
                         </td>
+
 
                         {/* Active Status */}
                         <td className="px-5 py-4">
@@ -280,6 +341,7 @@ export default function AdminUsers() {
                           </span>
                         </td>
 
+
                         {/* Joined Date */}
                         <td className="px-5 py-4 text-gray-500 dark:text-gray-400 text-xs">
                           {new Date(u.created_at).toLocaleDateString(
@@ -291,6 +353,7 @@ export default function AdminUsers() {
                             },
                           )}
                         </td>
+
 
                         {/* Actions */}
                         <td className="px-5 py-4">
@@ -309,6 +372,7 @@ export default function AdminUsers() {
                                 <option value="manager">Manager</option>
                               </select>
 
+
                               {/* Toggle active button */}
                               <button
                                 onClick={() =>
@@ -322,6 +386,7 @@ export default function AdminUsers() {
                               >
                                 {u.is_active ? "Deactivate" : "Activate"}
                               </button>
+
 
                               {/* Delete button */}
                               <button
@@ -414,10 +479,12 @@ export default function AdminUsers() {
                         </div>
                       </td>
 
+
                       {/* Phone */}
                       <td className="px-5 py-4 font-medium text-gray-700 dark:text-gray-300">
                         {u.phone || "—"}
                       </td>
+
 
                       {/* Requested Role */}
                       <td className="px-5 py-4">
@@ -427,6 +494,7 @@ export default function AdminUsers() {
                           {u.requested_role}
                         </span>
                       </td>
+
 
                       {/* Applied On */}
                       <td className="px-5 py-4 text-gray-500 dark:text-gray-400 text-xs">
@@ -438,6 +506,7 @@ export default function AdminUsers() {
                           minute: "2-digit",
                         })}
                       </td>
+
 
                       {/* Actions */}
                       <td className="px-5 py-4">
@@ -467,6 +536,7 @@ export default function AdminUsers() {
         </div>
       )}
 
+
       {/* REJECTION MODAL DIALOG */}
       {rejectingUserId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
@@ -479,6 +549,7 @@ export default function AdminUsers() {
               application. This will be stored in logs and visible to the
               applicant.
             </p>
+
 
             <form onSubmit={handleRejectSubmit} className="space-y-4">
               <div>
@@ -493,6 +564,7 @@ export default function AdminUsers() {
                   className="input w-full resize-none text-sm border-gray-200 dark:border-gray-800"
                 />
               </div>
+
 
               <div className="flex justify-end gap-2.5 pt-2">
                 <button

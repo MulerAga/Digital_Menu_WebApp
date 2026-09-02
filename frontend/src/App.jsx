@@ -83,7 +83,7 @@ const RootRedirect = () => {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-orange-50 via-white to-amber-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 px-4 text-center">
       <div className="text-7xl mb-6">🍽️</div>
-      <h1 className="text-3xl font-bold mb-2">RestaurantOS</h1>
+      <h1 className="text-3xl font-bold mb-2">RestaurantHub</h1>
       <p className="text-gray-500 dark:text-gray-400 mb-6 max-w-sm">
         Please navigate to your restaurant's URL to continue.
         <br />
