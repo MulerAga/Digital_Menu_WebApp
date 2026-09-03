@@ -13,7 +13,7 @@ export const SocketProvider = ({ children }) => {
 
   const connect = (token) => {
     if (socketRef.current?.connected) return;
-    const s = io(import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000', {
+    const s = io(import.meta.env.VITE_SOCKET_URL, {
       auth: { token },
       transports: ['websocket'],
     });

@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const subApi = axios.create({
-  baseURL: import.meta.env.VITE_SUBSCRIPTION_API_URL || 'http://localhost:5001/api',
+  baseURL: import.meta.env.VITE_SUBSCRIPTION_API_URL,
   timeout: 30000,
 });
 

@@ -6,6 +6,11 @@ const pool = mysql.createPool({
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
+
+  ssl: {
+    rejectUnauthorized: false,
+  },
+
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
@@ -464,24 +469,32 @@ const initDB = async () => {
 
     // Add restaurant_id to categories
     try {
-      await conn.query(`ALTER TABLE categories ADD COLUMN restaurant_id INT NULL`);
+      await conn.query(
+        `ALTER TABLE categories ADD COLUMN restaurant_id INT NULL`,
+      );
     } catch (e) {
       /* already exists */
     }
     try {
-      await conn.query(`ALTER TABLE categories ADD CONSTRAINT fk_categories_restaurant FOREIGN KEY (restaurant_id) REFERENCES restaurants(id) ON DELETE CASCADE`);
+      await conn.query(
+        `ALTER TABLE categories ADD CONSTRAINT fk_categories_restaurant FOREIGN KEY (restaurant_id) REFERENCES restaurants(id) ON DELETE CASCADE`,
+      );
     } catch (e) {
       /* already exists or error */
     }
 
     // Add restaurant_id to menu_items
     try {
-      await conn.query(`ALTER TABLE menu_items ADD COLUMN restaurant_id INT NULL`);
+      await conn.query(
+        `ALTER TABLE menu_items ADD COLUMN restaurant_id INT NULL`,
+      );
     } catch (e) {
       /* already exists */
     }
     try {
-      await conn.query(`ALTER TABLE menu_items ADD CONSTRAINT fk_menu_items_restaurant FOREIGN KEY (restaurant_id) REFERENCES restaurants(id) ON DELETE CASCADE`);
+      await conn.query(
+        `ALTER TABLE menu_items ADD CONSTRAINT fk_menu_items_restaurant FOREIGN KEY (restaurant_id) REFERENCES restaurants(id) ON DELETE CASCADE`,
+      );
     } catch (e) {
       /* already exists or error */
     }
@@ -493,7 +506,9 @@ const initDB = async () => {
       /* already exists */
     }
     try {
-      await conn.query(`ALTER TABLE orders ADD CONSTRAINT fk_orders_restaurant FOREIGN KEY (restaurant_id) REFERENCES restaurants(id) ON DELETE CASCADE`);
+      await conn.query(
+        `ALTER TABLE orders ADD CONSTRAINT fk_orders_restaurant FOREIGN KEY (restaurant_id) REFERENCES restaurants(id) ON DELETE CASCADE`,
+      );
     } catch (e) {
       /* already exists or error */
     }
