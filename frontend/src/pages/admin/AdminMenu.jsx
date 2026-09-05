@@ -20,6 +20,7 @@ export default function AdminMenu() {
   const [imageFile, setImageFile] = useState(null);
   const [imageObjectUrl, setImageObjectUrl] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
+  const [existingImage, setExistingImage] = useState(null);
   const [editId, setEditId] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -63,8 +64,12 @@ export default function AdminMenu() {
     return () => URL.revokeObjectURL(url);
   }, [imageFile]);
 
-  const handleDragStart = (index) => { dragItem.current = index; };
-  const handleDragEnter = (index) => { dragOver.current = index; };
+  const handleDragStart = (index) => {
+    dragItem.current = index;
+  };
+  const handleDragEnter = (index) => {
+    dragOver.current = index;
+  };
 
   const handleDragEnd = async () => {
     const reordered = [...categories];
@@ -74,7 +79,10 @@ export default function AdminMenu() {
     dragOver.current = null;
     setCategories(reordered);
     try {
-      await menuAPI.reorderCategories(reordered.map((c) => c.id), branchSlug); // ← branchSlug
+      await menuAPI.reorderCategories(
+        reordered.map((c) => c.id),
+        branchSlug,
+      ); // ← branchSlug
       toast.success("Category order saved");
     } catch {
       toast.error("Failed to save order");
@@ -97,6 +105,7 @@ export default function AdminMenu() {
     setEditId(item.id);
     setImageFile(null);
     setImagePreview(item.image || null);
+    setExistingImage(item.image || null);
     setShowForm(true);
     setShowCatForm(false);
   };
@@ -140,13 +149,16 @@ export default function AdminMenu() {
       });
       if (imageFile) {
         fd.append("image", imageFile);
-      } else if (imagePreview) {
+      } else if (imagePreview && imagePreview !== existingImage) {
         const blob = await fetch(imagePreview).then((r) => r.blob());
-        fd.append("image", new File([blob], "unsplash.jpg", { type: blob.type }));
+        fd.append(
+          "image",
+          new File([blob], "unsplash.jpg", { type: blob.type }),
+        );
       }
       // ── Pass branchSlug so the backend scopes to the correct branch ──
       if (editId) await menuAPI.updateItem(editId, fd, branchSlug);
-      else        await menuAPI.createItem(fd, branchSlug);
+      else await menuAPI.createItem(fd, branchSlug);
 
       toast.success(editId ? "Item updated" : "Item created");
       setShowForm(false);
@@ -154,6 +166,7 @@ export default function AdminMenu() {
       setEditId(null);
       setImageFile(null);
       setImagePreview(null);
+      setExistingImage(null);
       fetchAll();
     } catch (err) {
       toast.error(err.response?.data?.message || "Error saving item");
@@ -192,7 +205,11 @@ export default function AdminMenu() {
       setCatForm({ name: "", icon: "" });
       await fetchAll();
       setTimeout(
-        () => catListRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" }),
+        () =>
+          catListRef.current?.scrollIntoView({
+            behavior: "smooth",
+            block: "nearest",
+          }),
         100,
       );
     } catch (err) {
@@ -234,7 +251,10 @@ export default function AdminMenu() {
         <h1 className="text-2xl font-bold">Menu Management 🍕</h1>
         <div className="flex gap-2">
           <button
-            onClick={() => { setShowCatForm(!showCatForm); setShowForm(false); }}
+            onClick={() => {
+              setShowCatForm(!showCatForm);
+              setShowForm(false);
+            }}
             className="btn-secondary text-sm"
           >
             + Category
@@ -246,6 +266,9 @@ export default function AdminMenu() {
               } else {
                 setShowForm(true);
                 setEditId(null);
+                setImageFile(null);
+                setImagePreview(null);
+                setExistingImage(null);
                 setForm({ ...EMPTY_FORM, category_id: defaultCategoryId });
                 setShowCatForm(false);
               }
@@ -262,12 +285,16 @@ export default function AdminMenu() {
         <div className="card p-4 animate-slide-up">
           <form onSubmit={handleAddCategory} className="flex gap-3 items-end">
             <div className="flex-1">
-              <label className="block text-sm font-medium mb-1">Category Name</label>
+              <label className="block text-sm font-medium mb-1">
+                Category Name
+              </label>
               <input
                 className="input"
                 required
                 value={catForm.name}
-                onChange={(e) => setCatForm({ ...catForm, name: e.target.value })}
+                onChange={(e) =>
+                  setCatForm({ ...catForm, name: e.target.value })
+                }
                 placeholder="e.g. Main Courses"
               />
             </div>
@@ -276,19 +303,34 @@ export default function AdminMenu() {
               <input
                 className="input"
                 value={catForm.icon}
-                onChange={(e) => setCatForm({ ...catForm, icon: e.target.value })}
+                onChange={(e) =>
+                  setCatForm({ ...catForm, icon: e.target.value })
+                }
                 placeholder=""
               />
             </div>
-            <button type="submit" className="btn-primary">Add</button>
-            <button type="button" onClick={() => setShowCatForm(false)} className="btn-secondary">Cancel</button>
+            <button type="submit" className="btn-primary">
+              Add
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowCatForm(false)}
+              className="btn-secondary"
+            >
+              Cancel
+            </button>
           </form>
 
           {categories.length > 0 && (
-            <div ref={catListRef} className="mt-4 border-t border-gray-100 dark:border-gray-800 pt-4">
+            <div
+              ref={catListRef}
+              className="mt-4 border-t border-gray-100 dark:border-gray-800 pt-4"
+            >
               <p className="text-sm font-medium mb-2 text-gray-500 dark:text-gray-400">
                 Existing Categories{" "}
-                <span className="text-xs font-normal">(drag to reorder or type a number + Enter)</span>
+                <span className="text-xs font-normal">
+                  (drag to reorder or type a number + Enter)
+                </span>
               </p>
               <div className="flex flex-col gap-2">
                 {categories.map((cat, index) => (
@@ -301,26 +343,52 @@ export default function AdminMenu() {
                     onDragOver={(e) => e.preventDefault()}
                   >
                     {editingCat?.id === cat.id ? (
-                      <form onSubmit={handleUpdateCategory} className="flex gap-2 items-center">
+                      <form
+                        onSubmit={handleUpdateCategory}
+                        className="flex gap-2 items-center"
+                      >
                         <input
                           className="input w-16 text-center px-2"
                           value={editingCat.icon}
-                          onChange={(e) => setEditingCat({ ...editingCat, icon: e.target.value })}
+                          onChange={(e) =>
+                            setEditingCat({
+                              ...editingCat,
+                              icon: e.target.value,
+                            })
+                          }
                           placeholder="🍣"
                         />
                         <input
                           className="input flex-1"
                           required
                           value={editingCat.name}
-                          onChange={(e) => setEditingCat({ ...editingCat, name: e.target.value })}
+                          onChange={(e) =>
+                            setEditingCat({
+                              ...editingCat,
+                              name: e.target.value,
+                            })
+                          }
                         />
-                        <button type="submit" className="btn-primary text-xs py-1.5 px-3">Save</button>
-                        <button type="button" onClick={() => setEditingCat(null)} className="btn-secondary text-xs py-1.5 px-3">Cancel</button>
+                        <button
+                          type="submit"
+                          className="btn-primary text-xs py-1.5 px-3"
+                        >
+                          Save
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setEditingCat(null)}
+                          className="btn-secondary text-xs py-1.5 px-3"
+                        >
+                          Cancel
+                        </button>
                       </form>
                     ) : (
                       <div className="flex items-center justify-between bg-gray-50 dark:bg-gray-800 px-3 py-2 rounded-xl cursor-grab active:cursor-grabbing">
                         <span className="flex items-center gap-2 text-sm font-medium">
-                          <span className="text-gray-300 dark:text-gray-600 select-none">⠿</span>
+                          <span className="text-gray-300 dark:text-gray-600 select-none">
+                            ⠿
+                          </span>
                           <span>{cat.icon}</span>
                           {cat.name}
                         </span>
@@ -343,21 +411,35 @@ export default function AdminMenu() {
                                 reordered.splice(newPos, 0, cat);
                                 setCategories(reordered);
                                 menuAPI
-                                  .reorderCategories(reordered.map((c) => c.id), branchSlug) // ← branchSlug
+                                  .reorderCategories(
+                                    reordered.map((c) => c.id),
+                                    branchSlug,
+                                  ) // ← branchSlug
                                   .then(() => toast.success("Order saved"))
-                                  .catch(() => { toast.error("Failed to save order"); fetchAll(); });
+                                  .catch(() => {
+                                    toast.error("Failed to save order");
+                                    fetchAll();
+                                  });
                               }
                             }}
                             className="w-12 text-center text-xs border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 py-1 px-1 focus:outline-none focus:ring-1 focus:ring-primary-400"
                           />
                           <button
-                            onClick={() => setEditingCat({ id: cat.id, name: cat.name, icon: cat.icon })}
+                            onClick={() =>
+                              setEditingCat({
+                                id: cat.id,
+                                name: cat.name,
+                                icon: cat.icon,
+                              })
+                            }
                             className="text-xs btn-secondary py-1 px-2"
                           >
                             Edit
                           </button>
                           <button
-                            onClick={() => setDeleteCatModal({ id: cat.id, name: cat.name })}
+                            onClick={() =>
+                              setDeleteCatModal({ id: cat.id, name: cat.name })
+                            }
                             className="text-xs px-2 py-1 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-600 hover:bg-red-100 transition-colors"
                           >
                             Delete
@@ -376,7 +458,9 @@ export default function AdminMenu() {
       {/* Item Form */}
       {showForm && (
         <div className="card p-6 animate-slide-up">
-          <h2 className="font-semibold mb-4">{editId ? "Edit Item" : "New Menu Item"}</h2>
+          <h2 className="font-semibold mb-4">
+            {editId ? "Edit Item" : "New Menu Item"}
+          </h2>
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             <div>
               <label className="block text-sm font-medium mb-1">Name *</label>
@@ -384,7 +468,10 @@ export default function AdminMenu() {
                 className={`input transition-all ${nameError ? "border-red-400 ring-2 ring-red-200 animate-bounce-in" : ""}`}
                 required
                 value={form.name}
-                onChange={(e) => { setForm({ ...form, name: e.target.value }); setNameError(false); }}
+                onChange={(e) => {
+                  setForm({ ...form, name: e.target.value });
+                  setNameError(false);
+                }}
                 placeholder={nameError ? "⚠️ Enter a food name first" : ""}
               />
             </div>
@@ -406,16 +493,22 @@ export default function AdminMenu() {
               <select
                 className="input"
                 value={form.category_id}
-                onChange={(e) => setForm({ ...form, category_id: e.target.value })}
+                onChange={(e) =>
+                  setForm({ ...form, category_id: e.target.value })
+                }
               >
                 <option value="">Uncategorized</option>
                 {categories.map((c) => (
-                  <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
+                  <option key={c.id} value={c.id}>
+                    {c.icon} {c.name}
+                  </option>
                 ))}
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Item Image</label>
+              <label className="block text-sm font-medium mb-1">
+                Item Image
+              </label>
               <div className="flex gap-4 p-4 rounded-2xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
                 <div className="flex-shrink-0 w-32 h-32 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 flex flex-col items-center justify-center overflow-hidden">
                   {imageObjectUrl || imagePreview ? (
@@ -423,16 +516,32 @@ export default function AdminMenu() {
                       src={imageObjectUrl || getImageUrl(imagePreview)}
                       alt="preview"
                       className="w-full h-full object-cover"
-                      onError={(e) => { e.target.style.display = "none"; }}
+                      onError={(e) => {
+                        e.target.style.display = "none";
+                      }}
                     />
                   ) : (
                     <>
-                      <svg className="w-10 h-10 text-gray-300 dark:text-gray-600 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <rect x="3" y="3" width="18" height="18" rx="2" strokeWidth="1.5" />
+                      <svg
+                        className="w-10 h-10 text-gray-300 dark:text-gray-600 mb-1"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <rect
+                          x="3"
+                          y="3"
+                          width="18"
+                          height="18"
+                          rx="2"
+                          strokeWidth="1.5"
+                        />
                         <circle cx="8.5" cy="8.5" r="1.5" strokeWidth="1.5" />
                         <path strokeWidth="1.5" d="M21 15l-5-5L5 21" />
                       </svg>
-                      <span className="text-xs text-gray-400 dark:text-gray-500">No image selected</span>
+                      <span className="text-xs text-gray-400 dark:text-gray-500">
+                        No image selected
+                      </span>
                     </>
                   )}
                 </div>
@@ -444,12 +553,18 @@ export default function AdminMenu() {
                       placeholder="Paste image url here..."
                       value={imageFile ? imageFile.name : imagePreview || ""}
                       readOnly={!!imageFile}
-                      onChange={(e) => { setImagePreview(e.target.value); setImageFile(null); }}
+                      onChange={(e) => {
+                        setImagePreview(e.target.value);
+                        setImageFile(null);
+                      }}
                     />
                     {(imagePreview || imageFile) && (
                       <button
                         type="button"
-                        onClick={() => { setImagePreview(null); setImageFile(null); }}
+                        onClick={() => {
+                          setImagePreview(null);
+                          setImageFile(null);
+                        }}
                         className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 hover:text-red-500 transition-colors text-xs"
                       >
                         ✕
@@ -463,7 +578,10 @@ export default function AdminMenu() {
                         type="file"
                         accept="image/*"
                         className="hidden"
-                        onChange={(e) => { setImageFile(e.target.files[0]); setImagePreview(null); }}
+                        onChange={(e) => {
+                          setImageFile(e.target.files[0]);
+                          setImagePreview(null);
+                        }}
                       />
                     </label>
                     <button
@@ -478,23 +596,31 @@ export default function AdminMenu() {
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Description</label>
+              <label className="block text-sm font-medium mb-1">
+                Description
+              </label>
               <textarea
                 className="input resize-none"
                 rows={2}
                 value={form.description}
-                onChange={(e) => setForm({ ...form, description: e.target.value })}
+                onChange={(e) =>
+                  setForm({ ...form, description: e.target.value })
+                }
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Discount %</label>
+              <label className="block text-sm font-medium mb-1">
+                Discount %
+              </label>
               <input
                 className="input"
                 type="number"
                 min="0"
                 max="100"
                 value={form.discount_percent}
-                onChange={(e) => setForm({ ...form, discount_percent: e.target.value })}
+                onChange={(e) =>
+                  setForm({ ...form, discount_percent: e.target.value })
+                }
                 onWheel={(e) => e.target.blur()}
               />
             </div>
@@ -503,7 +629,9 @@ export default function AdminMenu() {
                 <input
                   type="checkbox"
                   checked={form.is_featured}
-                  onChange={(e) => setForm({ ...form, is_featured: e.target.checked })}
+                  onChange={(e) =>
+                    setForm({ ...form, is_featured: e.target.checked })
+                  }
                   className="w-4 h-4 accent-primary-500"
                 />
                 <span className="text-sm">Popular ⭐</span>
@@ -513,7 +641,13 @@ export default function AdminMenu() {
               <button type="submit" disabled={loading} className="btn-primary">
                 {loading ? "Saving..." : editId ? "Update Item" : "Create Item"}
               </button>
-              <button type="button" onClick={() => setShowForm(false)} className="btn-secondary">Cancel</button>
+              <button
+                type="button"
+                onClick={() => setShowForm(false)}
+                className="btn-secondary"
+              >
+                Cancel
+              </button>
             </div>
           </form>
         </div>
@@ -523,7 +657,9 @@ export default function AdminMenu() {
       <div className="card overflow-hidden">
         <div className="flex gap-3 p-4 border-b border-gray-100 dark:border-gray-800">
           <div className="relative flex-1">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">🔍</span>
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">
+              🔍
+            </span>
             <input
               type="text"
               className="input pl-9 text-sm"
@@ -539,7 +675,9 @@ export default function AdminMenu() {
           >
             <option value="">All Categories</option>
             {categories.map((c) => (
-              <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
+              <option key={c.id} value={c.id}>
+                {c.icon} {c.name}
+              </option>
             ))}
             <option value="null">Uncategorized</option>
           </select>
@@ -548,15 +686,26 @@ export default function AdminMenu() {
           <table className="w-full text-sm">
             <thead className="bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400">
               <tr>
-                {["Item", "Category", "Price", "Discount", "Status", "Actions"].map((h) => (
-                  <th key={h} className="px-4 py-3 text-left font-medium">{h}</th>
+                {[
+                  "Item",
+                  "Category",
+                  "Price",
+                  "Discount",
+                  "Status",
+                  "Actions",
+                ].map((h) => (
+                  <th key={h} className="px-4 py-3 text-left font-medium">
+                    {h}
+                  </th>
                 ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
               {items
                 .filter((item) => {
-                  const matchesName = !tableSearch || item.name.toLowerCase().includes(tableSearch.toLowerCase());
+                  const matchesName =
+                    !tableSearch ||
+                    item.name.toLowerCase().includes(tableSearch.toLowerCase());
                   const matchesCat =
                     !tableCatFilter ||
                     (tableCatFilter === "null"
@@ -565,11 +714,18 @@ export default function AdminMenu() {
                   return matchesName && matchesCat;
                 })
                 .map((item) => (
-                  <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                  <tr
+                    key={item.id}
+                    className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+                  >
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
                         {item.image ? (
-                          <img src={getImageUrl(item.image)} alt={item.name} className="w-10 h-10 rounded-lg object-cover" />
+                          <img
+                            src={getImageUrl(item.image)}
+                            alt={item.name}
+                            className="w-10 h-10 rounded-lg object-cover"
+                          />
                         ) : (
                           <div className="w-10 h-10 rounded-lg bg-orange-50 dark:bg-gray-700 flex items-center justify-center text-xl">
                             {item.category_icon ? item.category_icon : "🍴"}
@@ -577,20 +733,29 @@ export default function AdminMenu() {
                         )}
                         <div>
                           <p className="font-medium">{item.name}</p>
-                          {(item.is_featured === true || item.is_featured === 1) && (
-                            <span className="text-xs text-amber-500">⭐ Popular</span>
+                          {(item.is_featured === true ||
+                            item.is_featured === 1) && (
+                            <span className="text-xs text-amber-500">
+                              ⭐ Popular
+                            </span>
                           )}
                         </div>
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-gray-500 dark:text-gray-400">{item.category_name || "Uncategorized"}</td>
-                    <td className="px-4 py-3 font-semibold">${Number(item.price).toFixed(2)}</td>
+                    <td className="px-4 py-3 text-gray-500 dark:text-gray-400">
+                      {item.category_name || "Uncategorized"}
+                    </td>
+                    <td className="px-4 py-3 font-semibold">
+                      ${Number(item.price).toFixed(2)}
+                    </td>
                     <td className="px-4 py-3">
                       {item.discount_percent > 0 ? (
                         <span className="badge bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">
                           -{item.discount_percent}%
                         </span>
-                      ) : "—"}
+                      ) : (
+                        "—"
+                      )}
                     </td>
                     <td className="px-4 py-3">
                       <button
@@ -606,7 +771,12 @@ export default function AdminMenu() {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex gap-2">
-                        <button onClick={() => openEdit(item)} className="text-xs btn-secondary py-1 px-2">Edit</button>
+                        <button
+                          onClick={() => openEdit(item)}
+                          className="text-xs btn-secondary py-1 px-2"
+                        >
+                          Edit
+                        </button>
                         <button
                           onClick={() => handleDelete(item.id)}
                           className="text-xs px-2 py-1 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-600 hover:bg-red-100 transition-colors"
@@ -620,11 +790,15 @@ export default function AdminMenu() {
             </tbody>
           </table>
           {!items.length && (
-            <div className="text-center py-12 text-gray-400">No menu items yet. Add your first item!</div>
+            <div className="text-center py-12 text-gray-400">
+              No menu items yet. Add your first item!
+            </div>
           )}
           {items.length > 0 &&
             items.filter((item) => {
-              const matchesName = !tableSearch || item.name.toLowerCase().includes(tableSearch.toLowerCase());
+              const matchesName =
+                !tableSearch ||
+                item.name.toLowerCase().includes(tableSearch.toLowerCase());
               const matchesCat =
                 !tableCatFilter ||
                 (tableCatFilter === "null"
@@ -632,7 +806,9 @@ export default function AdminMenu() {
                   : String(item.category_id) === String(tableCatFilter));
               return matchesName && matchesCat;
             }).length === 0 && (
-              <div className="text-center py-12 text-gray-400">No items match your search.</div>
+              <div className="text-center py-12 text-gray-400">
+                No items match your search.
+              </div>
             )}
         </div>
       </div>
@@ -642,13 +818,23 @@ export default function AdminMenu() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-fade-in">
           <div className="card p-5 w-full max-w-2xl mx-4 shadow-2xl animate-bounce-in max-h-[80vh] flex flex-col">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-bold text-lg">Search Online — "{form.name}"</h3>
-              <button onClick={() => setUnsplashOpen(false)} className="text-gray-400 hover:text-gray-600 text-xl">✕</button>
+              <h3 className="font-bold text-lg">
+                Search Online — "{form.name}"
+              </h3>
+              <button
+                onClick={() => setUnsplashOpen(false)}
+                className="text-gray-400 hover:text-gray-600 text-xl"
+              >
+                ✕
+              </button>
             </div>
             {unsplashLoading ? (
               <div className="grid grid-cols-3 gap-3 overflow-y-auto">
                 {[...Array(6)].map((_, i) => (
-                  <div key={i} className="h-32 rounded-xl bg-gray-200 dark:bg-gray-700 animate-pulse" />
+                  <div
+                    key={i}
+                    className="h-32 rounded-xl bg-gray-200 dark:bg-gray-700 animate-pulse"
+                  />
                 ))}
               </div>
             ) : unsplashResults.length === 0 ? (
@@ -678,7 +864,14 @@ export default function AdminMenu() {
             )}
             <p className="text-xs text-gray-400 mt-3 text-center">
               Photos from{" "}
-              <a href="https://unsplash.com" target="_blank" rel="noreferrer" className="underline">Unsplash</a>
+              <a
+                href="https://unsplash.com"
+                target="_blank"
+                rel="noreferrer"
+                className="underline"
+              >
+                Unsplash
+              </a>
             </p>
           </div>
         </div>
@@ -690,7 +883,9 @@ export default function AdminMenu() {
           <div className="card p-6 w-full max-w-sm mx-4 shadow-2xl animate-bounce-in">
             <div className="text-center mb-5">
               <div className="text-4xl mb-3">🗂️</div>
-              <h3 className="font-bold text-lg">Delete "{deleteCatModal.name}"?</h3>
+              <h3 className="font-bold text-lg">
+                Delete "{deleteCatModal.name}"?
+              </h3>
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                 What should happen to the items in this category?
               </p>
@@ -702,8 +897,12 @@ export default function AdminMenu() {
               >
                 <span className="text-2xl">📦</span>
                 <div>
-                  <p className="font-semibold text-sm">Keep items (Uncategorized)</p>
-                  <p className="text-xs text-gray-400">Items will remain but have no category</p>
+                  <p className="font-semibold text-sm">
+                    Keep items (Uncategorized)
+                  </p>
+                  <p className="text-xs text-gray-400">
+                    Items will remain but have no category
+                  </p>
                 </div>
               </button>
               <button
@@ -712,11 +911,20 @@ export default function AdminMenu() {
               >
                 <span className="text-2xl">🗑️</span>
                 <div>
-                  <p className="font-semibold text-sm text-red-600">Delete all items too</p>
-                  <p className="text-xs text-gray-400">Permanently removes all items in this category</p>
+                  <p className="font-semibold text-sm text-red-600">
+                    Delete all items too
+                  </p>
+                  <p className="text-xs text-gray-400">
+                    Permanently removes all items in this category
+                  </p>
                 </div>
               </button>
-              <button onClick={() => setDeleteCatModal(null)} className="w-full btn-secondary py-2 text-sm">Cancel</button>
+              <button
+                onClick={() => setDeleteCatModal(null)}
+                className="w-full btn-secondary py-2 text-sm"
+              >
+                Cancel
+              </button>
             </div>
           </div>
         </div>
