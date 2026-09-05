@@ -50,8 +50,11 @@ export default function MenuPage() {
   useEffect(() => {
     menuAPI
       .getPublicCategories(RESTAURANT_SLUG, branchSlug)
-      .then((res) => setCategories(res.data))
-      .catch(() => {});
+      .then((res) => {
+        const data = Array.isArray(res.data) ? res.data : [];
+        setCategories(data);
+      })
+      .catch(() => setCategories([]));
   }, [RESTAURANT_SLUG, branchSlug]);
 
   useEffect(() => {
@@ -63,8 +66,11 @@ export default function MenuPage() {
     };
     menuAPI
       .getPublicItems(RESTAURANT_SLUG, params)
-      .then((res) => setItems(res.data))
-      .catch(() => {})
+      .then((res) => {
+        const data = Array.isArray(res.data) ? res.data : [];
+        setItems(data);
+      })
+      .catch(() => setItems([]))
       .finally(() => setLoading(false));
   }, [RESTAURANT_SLUG, branchSlug, selectedCat, search]);
 
@@ -113,17 +119,18 @@ export default function MenuPage() {
       {/* Categories */}
       <div className="flex flex-wrap gap-2 pb-2">
         {categories.length > 0 && (
-  <button
-    onClick={() => setSelectedCat("")}
-    className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all
-      ${!selectedCat
-        ? "bg-primary-500 text-white shadow-md"
-        : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:border-primary-300"
+          <button
+            onClick={() => setSelectedCat("")}
+            className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all
+      ${
+        !selectedCat
+          ? "bg-primary-500 text-white shadow-md"
+          : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:border-primary-300"
       }`}
-  >
-    All
-  </button>
-)}
+          >
+            All
+          </button>
+        )}
         {categories.map((cat) => (
           <button
             key={cat.id}

@@ -32,7 +32,12 @@ export default function GuestOrderPage() {
       .getByGuestToken(token, slug)
       .then((res) => {
         console.log("order data:", res.data);
-        setOrder(res.data);
+        // Ensure items is always an array
+        const order = res.data;
+        if (order && typeof order === "object" && !Array.isArray(order.items)) {
+          order.items = [];
+        }
+        setOrder(order);
       })
       .catch(() => setError("Order not found. The link may be invalid."))
       .finally(() => setLoading(false));
@@ -169,7 +174,7 @@ export default function GuestOrderPage() {
       {/* Order details */}
       <div className="card divide-y divide-gray-100 dark:divide-gray-800">
         <p className="px-4 py-3 font-semibold text-sm">Your Items</p>
-        {order.items?.map((item) => (
+        {(Array.isArray(order.items) ? order.items : []).map((item) => (
           <div
             key={item.id}
             className="flex justify-between items-center px-4 py-3 text-sm"
