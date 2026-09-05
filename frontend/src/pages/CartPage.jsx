@@ -3,7 +3,7 @@ import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
 import { useBasePath, useSlug } from "../context/SlugContext";
-import { orderAPI } from "../services/api";
+import { getImageUrl, orderAPI } from "../services/api";
 import toast from "react-hot-toast";
 import { Copy } from "lucide-react";
 
@@ -162,7 +162,7 @@ export default function CartPage() {
               <div className="w-12 h-12 rounded-xl bg-orange-50 dark:bg-gray-800 flex items-center justify-center text-2xl flex-shrink-0 overflow-hidden">
                 {item.image ? (
                   <img
-                    src={item.image}
+                    src={getImageUrl(item.image)}
                     alt={item.name}
                     className="w-full h-full object-cover rounded-xl"
                   />

@@ -43,11 +43,16 @@ api.interceptors.response.use(
 
 export default api;
 
+const backendUrl =
+  import.meta.env.VITE_BACKEND_URL ||
+  (import.meta.env.PROD ? "https://digital-menu-webapp.onrender.com" : "");
+
 export const getImageUrl = (path) => {
   if (!path) return null;
   if (path.startsWith("http://") || path.startsWith("https://")) return path;
-  const base = import.meta.env.VITE_BACKEND_URL || "";
-  return `${base}${path}`;
+  const base = backendUrl.replace(/\/$/, "");
+  const relativePath = path.startsWith("/") ? path : `/${path}`;
+  return `${base}${relativePath}`;
 };
 
 // ─── Auth ─────────────────────────────────────────────────────────────────────
