@@ -11,14 +11,27 @@ api.interceptors.request.use((config) => {
 
   // Restaurant isolation header
   const slug = localStorage.getItem("restaurant_slug");
-  if (slug) config.headers["x-restaurant-slug"] = slug;
+  if (slug && !config.headers["x-restaurant-slug"])
+    config.headers["x-restaurant-slug"] = slug;
 
   // Branch isolation header — sends current branch context from localStorage
   // NOTE: admin pages override this per-request using branchSlug from SlugContext
   const branchId = localStorage.getItem("branch_id");
   const branchSlug = localStorage.getItem("branch_slug");
-  if (branchId) config.headers["x-branch-id"] = branchId;
-  if (branchSlug) config.headers["x-branch-slug"] = branchSlug;
+  if (
+    branchId &&
+    !config.headers["x-branch-id"] &&
+    !config.headers["x-branch-slug"]
+  ) {
+    config.headers["x-branch-id"] = branchId;
+  }
+  if (
+    branchSlug &&
+    !config.headers["x-branch-id"] &&
+    !config.headers["x-branch-slug"]
+  ) {
+    config.headers["x-branch-slug"] = branchSlug;
+  }
 
   return config;
 });
@@ -146,21 +159,40 @@ export const menuAPI = {
     ),
 
   // ── Public slug-based routes ───────────────────────────────────────────────
-  getPublicItems: (slug, params) => api.get(`/menu/${slug}/items`, { params }),
+  getPublicItems: (slug, params) =>
+    api.get(`/menu/${slug}/items`, {
+      params,
+      headers: {
+        "x-restaurant-slug": slug,
+        "x-branch-slug": params?.branch || "main",
+      },
+    }),
 
   getPublicCategories: (slug, branchSlug) =>
     api.get(`/menu/${slug}/categories`, {
       params: branchSlug ? { branch: branchSlug } : {},
+      headers: {
+        "x-restaurant-slug": slug,
+        "x-branch-slug": branchSlug || "main",
+      },
     }),
 
   getPublicRecommendations: (slug, branchSlug) =>
     api.get(`/menu/${slug}/recommendations`, {
       params: branchSlug ? { branch: branchSlug } : {},
+      headers: {
+        "x-restaurant-slug": slug,
+        "x-branch-slug": branchSlug || "main",
+      },
     }),
 
   getPublicPromotions: (slug, branchSlug) =>
     api.get(`/menu/${slug}/promotions`, {
       params: branchSlug ? { branch: branchSlug } : {},
+      headers: {
+        "x-restaurant-slug": slug,
+        "x-branch-slug": branchSlug || "main",
+      },
     }),
 };
 
@@ -193,6 +225,7 @@ export const orderAPI = {
   getAnalytics: (branchSlug = null) =>
     api.get("/orders/analytics", {
       params: { branch: branchSlug },
+      headers: { "x-branch-slug": branchSlug || "main" },
     }),
 
   // branchSlug scopes the items summary to a specific branch when provided.

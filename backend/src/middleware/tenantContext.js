@@ -4,7 +4,11 @@ const { pool } = require("../config/db");
 module.exports = async (req, res, next) => {
   try {
     // 1. Decode token if not already decoded
-    if (!req.user && req.headers.authorization && req.headers.authorization.startsWith("Bearer ")) {
+    if (
+      !req.user &&
+      req.headers.authorization &&
+      req.headers.authorization.startsWith("Bearer ")
+    ) {
       const token = req.headers.authorization.split(" ")[1];
       try {
         req.user = jwt.verify(token, process.env.JWT_SECRET);
@@ -17,12 +21,23 @@ module.exports = async (req, res, next) => {
     let ownerId = null;
     let role = req.user ? req.user.role : "customer";
 
-    // 2. Resolve restaurantId and ownerId
-    if (req.user) {
+    // 2. Resolve restaurantId and ownerId. Public slug routes must use the
+    // slug in the URL even when a logged-in user has a different restaurant.
+    const requestedSlug = req.params.slug;
+    if (requestedSlug) {
+      const [rows] = await pool.query(
+        "SELECT id, admin_id FROM restaurants WHERE slug = ? LIMIT 1",
+        [requestedSlug],
+      );
+      if (rows.length) {
+        restaurantId = rows[0].id;
+        ownerId = rows[0].admin_id;
+      }
+    } else if (req.user) {
       if (req.user.role === "admin") {
         const [rows] = await pool.query(
           "SELECT id, admin_id FROM restaurants WHERE admin_id = ? LIMIT 1",
-          [req.user.id]
+          [req.user.id],
         );
         if (rows.length) {
           restaurantId = rows[0].id;
@@ -32,7 +47,7 @@ module.exports = async (req, res, next) => {
         restaurantId = req.user.restaurant_id;
         const [rows] = await pool.query(
           "SELECT admin_id FROM restaurants WHERE id = ? LIMIT 1",
-          [restaurantId]
+          [restaurantId],
         );
         if (rows.length) {
           ownerId = rows[0].admin_id;
@@ -41,12 +56,16 @@ module.exports = async (req, res, next) => {
     }
 
     // If still not resolved (or user is customer / guest / unauthenticated), resolve by slug
-    if (!restaurantId) {
-      const slug = req.headers["x-restaurant-slug"] || req.params.slug || req.query.slug || req.body.restaurant_slug || req.body.slug;
+    if (!restaurantId && !requestedSlug) {
+      const slug =
+        req.headers["x-restaurant-slug"] ||
+        req.query.slug ||
+        req.body?.restaurant_slug ||
+        req.body?.slug;
       if (slug) {
         const [rows] = await pool.query(
           "SELECT id, admin_id FROM restaurants WHERE slug = ? LIMIT 1",
-          [slug]
+          [slug],
         );
         if (rows.length) {
           restaurantId = rows[0].id;
@@ -57,18 +76,24 @@ module.exports = async (req, res, next) => {
 
     // Reject if restaurant context cannot be resolved
     if (!restaurantId) {
-      return res.status(400).json({ message: "Restaurant context is required" });
+      return res
+        .status(400)
+        .json({ message: "Restaurant context is required" });
     }
 
     // 3. Resolve branchId
     let branchId = null;
 
     // A. From URL/query/body branch slug or x-branch-slug header
-    const branchSlug = req.headers["x-branch-slug"] || req.params.branchSlug || req.query.branch || req.body.branch_slug;
+    const branchSlug =
+      req.params.branchSlug ||
+      req.query.branch ||
+      req.body?.branch_slug ||
+      req.headers["x-branch-slug"];
     if (branchSlug && branchSlug !== "main") {
       const [rows] = await pool.query(
         "SELECT id FROM branches WHERE restaurant_id = ? AND branch_slug = ? LIMIT 1",
-        [restaurantId, branchSlug]
+        [restaurantId, branchSlug],
       );
       if (rows.length) {
         branchId = rows[0].id;
@@ -83,7 +108,7 @@ module.exports = async (req, res, next) => {
         if (!isNaN(parsedId)) {
           const [rows] = await pool.query(
             "SELECT id FROM branches WHERE id = ? AND restaurant_id = ? LIMIT 1",
-            [parsedId, restaurantId]
+            [parsedId, restaurantId],
           );
           if (rows.length) {
             branchId = rows[0].id;
@@ -96,7 +121,7 @@ module.exports = async (req, res, next) => {
     if (!branchId && req.user && req.user.branch_id) {
       const [rows] = await pool.query(
         "SELECT id FROM branches WHERE id = ? AND restaurant_id = ? LIMIT 1",
-        [req.user.branch_id, restaurantId]
+        [req.user.branch_id, restaurantId],
       );
       if (rows.length) {
         branchId = rows[0].id;
@@ -107,7 +132,7 @@ module.exports = async (req, res, next) => {
     if (!branchId) {
       const [rows] = await pool.query(
         "SELECT id FROM branches WHERE restaurant_id = ? AND is_main_branch = 1 LIMIT 1",
-        [restaurantId]
+        [restaurantId],
       );
       if (rows.length) {
         branchId = rows[0].id;
@@ -124,7 +149,7 @@ module.exports = async (req, res, next) => {
       restaurantId,
       branchId,
       ownerId,
-      role
+      role,
     };
 
     next();
