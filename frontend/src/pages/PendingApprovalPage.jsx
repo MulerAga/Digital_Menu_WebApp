@@ -8,7 +8,7 @@ export default function PendingApprovalPage() {
   const navigate = useNavigate();
   const base = useBasePath();
   const { slug } = useParams();
-   const backTo = slug ? `/${slug}` : "/";
+  const backTo = slug ? `/${slug}` : "/";
 
   useEffect(() => {
     // If somehow an approved user reaches this page, redirect
@@ -21,7 +21,6 @@ export default function PendingApprovalPage() {
     logout();
     navigate(`${backTo}`);
   };
-  
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
@@ -80,7 +79,7 @@ export default function PendingApprovalPage() {
         <div className="space-y-3">
           <button
             onClick={handleLogout}
-            className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-3 rounded-lg transition"
+            className="w-full bg-blue-600 hover:bg-blue-900 text-white font-semibold py-3 rounded-lg transition"
           >
             Back to Home
           </button>
